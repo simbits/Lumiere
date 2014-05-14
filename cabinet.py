@@ -8,11 +8,15 @@ import time
 
 from Adafruit_MCP230xx import Adafruit_MCP230XX
 
+CABINET_VERSION='1.0a'
+START_MSG='## Cabinet version %s ##' % (CABINET_VERSION) 
+
 MCAST_GRP = ('224.19.79.1', 9999)
 DRAWERS = 9
 USE_PULLUPS = 1
 RETRIGGER_DELAY = 10    #seconds
 WAIT_DELAY = 0.5        #seconds
+
 
 if __name__ == '__main__':
     mcp = Adafruit_MCP230XX(address=0x20, num_gpios=16) # MCP23017
@@ -31,6 +35,11 @@ if __name__ == '__main__':
     sock.settimeout(0.2)
     ttl = struct.pack('b', 1)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
+
+    try:
+        sock.sendto(START_MSG, MCAST_GRP)
+    except Exception as e:
+        print 'exception during send: %s' % (str(e))
 
     while True:
         for i in range(0, DRAWERS):
