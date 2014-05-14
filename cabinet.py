@@ -26,7 +26,6 @@ if __name__ == '__main__':
         p_state[i] = bool((mcp.input(i) >> i) & 0x01)
 
     print 'initial state: %s' % (str(p_state))
-
     print 'setting up mcast group @%s' % (str(MCAST_GRP))
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(0.2)
@@ -34,22 +33,16 @@ if __name__ == '__main__':
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, ttl)
 
     while True:
-        print 'previous state: %s' % (str(p_state))
-
         for i in range(0, DRAWERS):
             if trigger_delay[i] > 0:
                 trigger_delay[i] = trigger_delay[i] - 1
             c_state[i] = bool((mcp.input(i) >> i) & 0x01)
-
-        print 'current state 1: %s' % (str(c_state))
-        print 'trigger delays: %s' % (str(trigger_delay))
 
         triggered = {i for i in range(0, DRAWERS)
                                 if c_state[i] != p_state[i] and 
                                 not c_state[i] and
                                 trigger_delay[i] == 0}
 
-        print 'triggered set: %s' % (str(triggered))
         for i in triggered:
             trigger_delay[i] = RETRIGGER_DELAY / WAIT_DELAY
 
@@ -65,4 +58,4 @@ if __name__ == '__main__':
 
         p_state = list(c_state)
 
-        time.sleep(WAIT_DELAY) # relax little
+        time.sleep(WAIT_DELAY) # relax a little
