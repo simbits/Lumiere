@@ -30,6 +30,8 @@ then
     update_cabinet
 fi
 
+add_mcast_route
+
 while :
 do
     $PYTHON $CABINET_BIN
