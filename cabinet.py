@@ -8,7 +8,7 @@ import time
 
 from Adafruit_MCP230xx import Adafruit_MCP230XX
 
-CABINET_VERSION='1.0a'
+CABINET_VERSION='1.0b'
 START_MSG='## Cabinet version %s ##' % (CABINET_VERSION) 
 
 MCAST_GRP = ('224.19.79.1', 9999)
