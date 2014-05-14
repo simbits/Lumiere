@@ -40,6 +40,7 @@ if __name__ == '__main__':
         sock.sendto(START_MSG, MCAST_GRP)
     except Exception as e:
         print 'exception during send: %s' % (str(e))
+        sys.exit(1)
 
     while True:
         for i in range(0, DRAWERS):
