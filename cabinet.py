@@ -43,8 +43,7 @@ if __name__ == '__main__':
 
     while True:
         for i in range(0, DRAWERS):
-            #c_state[i] = not bool((mcp.input(i) >> i) & 0x01)
-            c_state[i] = not bool(random.randint(0,1))
+            c_state[i] = not bool((mcp.input(i) >> i) & 0x01)
 
 
         changed = {i for i in range(0, DRAWERS) if c_state[i] != p_state[i]}
