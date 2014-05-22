@@ -11,7 +11,6 @@ import sys
 import time
 import traceback
 
-DRAWERS = 9
 MCAST_GRP = '224.19.79.1'
 MCAST_PORT = 9999
 MOVIE_PATH = '/usr/share/lumiere/media'
@@ -32,7 +31,7 @@ def stop_movie():
     global _omxplayer
     global _now_playing
 
-    #GPIO.output(PROJECTOR_SUPPLY_PIN, PROJECTOR_OFF)
+    GPIO.output(PROJECTOR_SUPPLY_PIN, PROJECTOR_OFF)
 
     if _omxplayer != None:
         print 'Stopping movie %d:%s' % (_now_playing+1, MOVIE_LIST[_now_playing])
@@ -84,8 +83,9 @@ def current_movie_playing():
     return _now_playing
 
 def main():
-    previous_state = [False] * DRAWERS
     playlist = set()
+    GPIO.setup(PROJECTOR_SUPPLY_PIN, GPIO.OUT)
+    GPIO.output(PROJECTOR_SUPPLY_PIN, PROJECTOR_OFF)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 
@@ -124,69 +124,31 @@ def main():
             continue
 
         try:
-            if len(data) != 19:
-                print 'expected 19 bytes got %d' % len(data)
+            if len(data) != 3:
+                print 'expected 3 bytes got %d' % len(data)
                 continue
 
-            cmd,args = data.split(':')
+            state,drawer = data.split(':')
+            drawer = int(drawer)
         except ValueError, e:
             print 'wrong data format: %s (%s)' % (data, str(e))
             continue
 
-        if cmd == 's':
-            new_state = [bool(int(i)) for i in args.split(',')]
-
-        print new_state
-
-        opened = {i for i in range(0, DRAWERS)
-                                if new_state[i] != previous_state[i] and 
-                                new_state[i]}
-        closed = {i for i in range(0, DRAWERS)
-                                if new_state[i] != previous_state[i] and 
-                                not new_state[i]}
-
-        start_random = False
-        start_new = False
-
-        try:
-            for i in closed:
-                if i in playlist:
-                    playlist.remove(i)
-                    if i == current_movie_playing():
-                        stop_movie()
-                        start_random = True
-            print 'playlist after closing: %s' % (list(playlist))
-        except IndexError:
-            pass
-
-        try:
-            for i in opened:
-                if i not in playlist:
-                    playlist.add(i) 
-                    start_new = True
-            print 'playlist after opening: %s' % (list(playlist))
-        except IndexError:
-            pass
-
-        try:
-            if start_new: 
-                print 'starting new movie'
-                start_movie(random.choice(list(opened)))
-            elif start_random:
-                print 'starting random movie'
+        if state == STATE_OPEN:
+            if drawer not in playlist or not drawer == _now_playing:
+                playlist.add(drawer)
+                print 'playlist: %s' % (list(playlist))
+                start_movie(drawer)
+        elif state == STATE_CLOSED:
+            if drawer in playlist:
+                playlist.remove(drawer)
+                print 'playlist: %s' % (list(playlist))
+            if drawer == current_movie_playing():
                 start_random_movie_from_list(list(playlist))
-            elif not is_movie_playing():
-                start_movie(random.choice(list(playlist)))
-        except IndexError:
-            pass
-
-        previous_state = list(new_state)
     
 if __name__ == '__main__':
     try:
         GPIO.setmode(GPIO.BOARD)
-        GPIO.setup(PROJECTOR_SUPPLY_PIN, GPIO.OUT)
-        GPIO.output(PROJECTOR_SUPPLY_PIN, PROJECTOR_ON)
         main()
     except KeyboardInterrupt:
         print 'Exiting'
@@ -196,5 +158,4 @@ if __name__ == '__main__':
     finally:
         print 'Cleaning up GPIO settings'
         stop_movie()
-        GPIO.output(PROJECTOR_SUPPLY_PIN, PROJECTOR_OFF)
-        #GPIO.cleanup()
+        GPIO.cleanup()
