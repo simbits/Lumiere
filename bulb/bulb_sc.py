@@ -81,7 +81,7 @@ def current_movie_playing():
     return _now_playing
 
 def main():
-    previous_state = [True] * DRAWERS
+    previous_state = [False] * DRAWERS
     playlist = set()
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -103,7 +103,7 @@ def main():
 
         try:
             data, addr = sock.recvfrom(512)
-            #print '[%s] | received from %s: %s' % (time.ctime(), addr, data)
+            print '[%s] | received from %s: %s' % (time.ctime(), addr, data)
 
         except socket.error, e:
             if e.errno == 11:
@@ -128,10 +128,10 @@ def main():
 
         opened = {i for i in range(0, DRAWERS)
                                 if new_state[i] != previous_state[i] and
-                                not new_state[i]}
+                                new_state[i]}
         closed = {i for i in range(0, DRAWERS)
                                 if new_state[i] != previous_state[i] and
-                                new_state[i]}
+                                not new_state[i]}
 
         start_random = False
         start_new = False
