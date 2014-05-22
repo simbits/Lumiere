@@ -82,7 +82,7 @@ def current_movie_playing():
     return _now_playing
 
 def main():
-    previous_state = [False] * DRAWERS
+    previous_state = [True] * DRAWERS
     playlist = set()
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -109,12 +109,10 @@ def main():
 
         try:
             data, addr = sock.recvfrom(512)
-            print '[%s] | received from %s: %s' % (time.ctime(), addr, data)
+            #print '[%s] | received from %s: %s' % (time.ctime(), addr, data)
             
         except socket.error, e:
             if e.errno == 11:
-                sys.stdout.write('.')
-                sys.stdout.flush()
                 if not is_movie_playing():
                     start_random_movie_from_list(list(playlist))
             else:
@@ -134,17 +132,20 @@ def main():
         if cmd == 's':
             new_state = [bool(int(i)) for i in args.split(',')]
 
-        print new_state
-
         opened = {i for i in range(0, DRAWERS)
                                 if new_state[i] != previous_state[i] and
-                                new_state[i]}
+                                not new_state[i]}
         closed = {i for i in range(0, DRAWERS)
                                 if new_state[i] != previous_state[i] and
-                                not new_state[i]}
+                                new_state[i]}
 
         start_random = False
         start_new = False
+
+        if len(opened) > 0:
+            print 'New opened: %s' % (str(opened))
+        if len(closed) > 0:
+            print 'New closed: %s' % (str(closed))
 
         try:
             for i in closed:
@@ -155,7 +156,8 @@ def main():
                         start_random = True
                     if len(playlist) == 0:
                         GPIO.output(PROJECTOR_SUPPLY_PIN, PROJECTOR_OFF)
-            print 'playlist after closing: %s' % (list(playlist))
+            if len(closed) > 0:
+                print 'playlist after closing: %s' % (list(playlist))
         except IndexError:
             pass
 
@@ -164,14 +166,15 @@ def main():
                 if i not in playlist:
                     playlist.add(i)
                     start_new = True
-            print 'playlist after opening: %s' % (list(playlist))
+            if len(opened) > 0:
+                print 'playlist after opening: %s' % (list(playlist))
         except IndexError:
             pass
 
         try:
             if start_new:
-                print 'starting new movie'
-                start_movie(random.choice(list(opened)))
+                print 'starting new movie from opened list'
+                start_random_movie_from_list(list(opened))
             elif start_random:
                 print 'starting random movie'
                 start_random_movie_from_list(list(playlist))
@@ -186,7 +189,7 @@ if __name__ == '__main__':
     try:
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(PROJECTOR_SUPPLY_PIN, GPIO.OUT)
-        GPIO.output(PROJECTOR_SUPPLY_PIN, PROJECTOR_ON)
+        GPIO.output(PROJECTOR_SUPPLY_PIN, PROJECTOR_OFF)
         main()
     except KeyboardInterrupt:
         print 'Exiting'
