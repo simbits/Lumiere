@@ -18,8 +18,8 @@ MOVIE_SUFFIX = 'mp4'
 MOVIE_LIST = [ '%s/%d.%s' % (MOVIE_PATH, n, MOVIE_SUFFIX) for n in range(1, 10) ]
 
 PROJECTOR_SUPPLY_PIN = 26 #BOARD P1 pin number corresponds with GPIO7 on Rev2 RPi
-PROJECTOR_ON = False
-PROJECTOR_OFF = True
+PROJECTOR_ON = True
+PROJECTOR_OFF = False
 
 STATE_OPEN = 'o'
 STATE_CLOSED = 'c'
