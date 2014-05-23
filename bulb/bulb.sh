@@ -4,7 +4,7 @@ LUMIERE_PATH=/opt/Lumiere
 BULB_BIN=$LUMIERE_PATH/bulb/bulb.py
 PYTHON=/usr/bin/python
 MCAST_ADDR=224.19.79.1
-GW_ADDR=192.168.20.1
+GW_ADDR=192.168.19.79
 GW_DEV=wlan0
 
 add_mcast_route ()
