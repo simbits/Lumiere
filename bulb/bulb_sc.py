@@ -14,18 +14,21 @@ import traceback
 DRAWERS = 9
 LUMIERE_PORT = 9999
 MOVIE_PATH = '/usr/share/lumiere/media'
-MOVIE_SUFFIX = 'mp4'
+MOVIE_SUFFIX = 'mov'
 MOVIE_LIST = [ '%s/%d.%s' % (MOVIE_PATH, n, MOVIE_SUFFIX) for n in range(1, 10) ]
 
 PROJECTOR_SUPPLY_PIN = 26 #BOARD P1 pin number corresponds with GPIO7 on Rev2 RPi
 PROJECTOR_ON = True
 PROJECTOR_OFF = False
 
+EMPTY_LIST_TIMEOUT  = 5 * 60.0
+
 STATE_OPEN = 'o'
 STATE_CLOSED = 'c'
 
 _now_playing = -1
 _omxplayer = None
+
 
 def stop_movie():
     global _omxplayer
@@ -83,6 +86,7 @@ def current_movie_playing():
 def main():
     previous_state = [False] * DRAWERS
     playlist = set()
+    empty_list_time = time.time()
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -103,7 +107,7 @@ def main():
 
         try:
             data, addr = sock.recvfrom(512)
-            print '[%s] | received from %s: %s' % (time.ctime(), addr, data)
+            #print '[%s] | received from %s: %s' % (time.ctime(), addr, data)
 
         except socket.error, e:
             if e.errno == 11:
@@ -149,6 +153,7 @@ def main():
                         stop_movie()
                         start_random = True
                     if len(playlist) == 0:
+                        empty_list_time = time.time()
                         GPIO.output(PROJECTOR_SUPPLY_PIN, PROJECTOR_OFF)
             if len(closed) > 0:
                 print 'playlist after closing: %s' % (list(playlist))
@@ -166,14 +171,22 @@ def main():
             pass
 
         try:
-            if start_new:
-                print 'starting new movie from opened list'
-                start_random_movie_from_list(list(opened))
-            elif start_random:
-                print 'starting random movie'
-                start_random_movie_from_list(list(playlist))
-            elif not is_movie_playing():
-                start_movie(random.choice(list(playlist)))
+            if len(playlist) > 0:
+                if start_new:
+                    print 'starting new movie from opened list'
+                    start_random_movie_from_list(list(opened))
+                elif start_random:
+                    print 'starting random movie'
+                    start_random_movie_from_list(list(playlist))
+                elif not is_movie_playing():
+                    start_movie(random.choice(list(playlist)))
+            else:
+                dt = time.time() - empty_list_time
+                if dt > EMPTY_LIST_TIMEOUT:
+                    if not is_movie_playing():
+                        start_movie(random.randrange(0, DRAWERS))
+                else:
+                    print "clocks ticking: %d" % (dt) 
         except IndexError:
             pass
 
