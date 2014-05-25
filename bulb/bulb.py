@@ -18,7 +18,7 @@ MOVIE_PATH = '/usr/share/lumiere/media'
 MOVIE_SUFFIX = 'mp4'
 MOVIE_LIST = [ '%s/%d.%s' % (MOVIE_PATH, n, MOVIE_SUFFIX) for n in range(1, 10) ]
 
-PROJECTOR_SUPPLY_PIN = 12
+PROJECTOR_SUPPLY_PIN = 25
 PROJECTOR_ON = False
 PROJECTOR_OFF = True
 
@@ -32,8 +32,6 @@ def stop_movie():
     global _omxplayer
     global _now_playing
 
-    #GPIO.output(PROJECTOR_SUPPLY_PIN, PROJECTOR_OFF)
-
     if _omxplayer != None:
         print 'Stopping movie %d:%s' % (_now_playing+1, MOVIE_LIST[_now_playing])
         if _omxplayer.isAlive():
@@ -43,7 +41,7 @@ def stop_movie():
                 time.sleep(0.1)
         _omxplayer.close()
         _omxplayer = None
-        _now_playing =-1 
+        _now_playing =-1
 
 def start_movie(index):
     global _omxplayer
@@ -53,7 +51,7 @@ def start_movie(index):
         return -1
 
     stop_movie()
-    
+
     print 'Starting movie %d:%s' % (index+1, MOVIE_LIST[index])
 
     _omxplayer = OMXPlayer(MOVIE_LIST[index], args='-b', start_playback=True)
@@ -139,10 +137,10 @@ def main():
         print new_state
 
         opened = {i for i in range(0, DRAWERS)
-                                if new_state[i] != previous_state[i] and 
+                                if new_state[i] != previous_state[i] and
                                 new_state[i]}
         closed = {i for i in range(0, DRAWERS)
-                                if new_state[i] != previous_state[i] and 
+                                if new_state[i] != previous_state[i] and
                                 not new_state[i]}
 
         start_random = False
@@ -155,6 +153,8 @@ def main():
                     if i == current_movie_playing():
                         stop_movie()
                         start_random = True
+                    if len(playlist) == 0:
+                        GPIO.output(PROJECTOR_SUPPLY_PIN, PROJECTOR_OFF)
             print 'playlist after closing: %s' % (list(playlist))
         except IndexError:
             pass
@@ -162,14 +162,14 @@ def main():
         try:
             for i in opened:
                 if i not in playlist:
-                    playlist.add(i) 
+                    playlist.add(i)
                     start_new = True
             print 'playlist after opening: %s' % (list(playlist))
         except IndexError:
             pass
 
         try:
-            if start_new: 
+            if start_new:
                 print 'starting new movie'
                 start_movie(random.choice(list(opened)))
             elif start_random:
@@ -181,7 +181,7 @@ def main():
             pass
 
         previous_state = list(new_state)
-    
+
 if __name__ == '__main__':
     try:
         GPIO.setmode(GPIO.BOARD)

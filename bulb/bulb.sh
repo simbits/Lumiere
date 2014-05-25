@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LUMIERE_PATH=/opt/lumieret
+LUMIERE_PATH=/opt/Lumiere
 BULB_BIN=$LUMIERE_PATH/bulb/bulb.py
 PYTHON=/usr/bin/python
 MCAST_ADDR=224.19.79.1
