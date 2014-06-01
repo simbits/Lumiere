@@ -1,7 +1,7 @@
 #!/bin/bash
 
 LUMIERE_PATH=/opt/Lumiere
-BULB_BIN=$LUMIERE_PATH/bulb/bulb.py
+BULB_BIN=$LUMIERE_PATH/bulb/bulb_sc.py
 PYTHON=/usr/bin/python
 
 have_wired_network ()

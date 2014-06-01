@@ -45,11 +45,11 @@ if __name__ == '__main__':
         for i in range(0, DRAWERS):
             c_state[i] = not bool((mcp.input(i) >> i) & 0x01)
 
-
         changed = {i for i in range(0, DRAWERS) if c_state[i] != p_state[i]}
 
         try:
-            print 'sending drawer states %s' % (c_state)
+            if len(changed) > 0:
+                print 'sending drawer states %s' % (c_state)
             for ip in LUMIERE_IP:
                 sock.sendto('s:%s' % (','.join(['%d' % i for i in c_state])), (ip, LUMIERE_PORT))
         except IndexError:

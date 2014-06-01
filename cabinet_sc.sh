@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CABINET_PATH=/opt/lumiere/cabinet
-CABINET_BIN=$CABINET_PATH/cabinet.py
+CABINET_BIN=$CABINET_PATH/cabinet_sc.py
 PYTHON=/usr/bin/python
 
 have_wired_network ()
