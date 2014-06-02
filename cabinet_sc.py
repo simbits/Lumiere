@@ -16,7 +16,7 @@ LUMIERE_PORT = 9999
 DRAWERS = 9
 USE_PULLUPS = 1
 WAIT_DELAY = 0.5        #seconds
-DEBOUNCE_DELAY_COUNT    2
+DEBOUNCE_DELAY_COUNT = 2
 
 if __name__ == '__main__':
     mcp = Adafruit_MCP230XX(address=0x20, num_gpios=16) # MCP23017
