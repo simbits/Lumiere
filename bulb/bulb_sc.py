@@ -21,7 +21,8 @@ PROJECTOR_SUPPLY_PIN = 26 #BOARD P1 pin number corresponds with GPIO7 on Rev2 RP
 PROJECTOR_ON = True
 PROJECTOR_OFF = False
 
-EMPTY_LIST_TIMEOUT  = 5 * 60.0
+EMPTY_LIST_TIMEOUT  = 2 * 60.0
+TURN_OFF_TIMEOUT    = 30 * 60.0
 
 STATE_OPEN = 'o'
 STATE_CLOSED = 'c'
@@ -83,7 +84,27 @@ def current_movie_playing():
     global _now_playing
     return _now_playing
 
+def timeout_timer(t):
+    dt = time.time() - t
+    if dt > EMPTY_LIST_TIMEOUT:
+        print "clocks ticking for turn off: %d" % (dt)
+        if dt > TURN_OFF_TIMEOUT + EMPTY_LIST_TIMEOUT:
+            print 'turning off again'
+            stop_movie()
+            GPIO.output(PROJECTOR_SUPPLY_PIN, PROJECTOR_OFF)
+            t = time.time()
+        elif not is_movie_playing():
+            start_movie(random.randrange(0, DRAWERS))
+    else:
+        if is_movie_playing():
+            stop_movie()
+        print "clocks ticking: %d" % (dt)
+
+    return t
+
+
 def main():
+    first_timeout = True
     previous_state = [False] * DRAWERS
     playlist = set()
     empty_list_time = time.time()
@@ -92,7 +113,7 @@ def main():
 
     try:
         host = '0.0.0.0'
-        timeval=struct.pack("2I", 0, 500000) # timeout 0.5s
+        timeval=struct.pack("2I", 5, 0) # timeout 5s
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVTIMEO, timeval)
         sock.bind(('0.0.0.0', LUMIERE_PORT))
@@ -107,15 +128,24 @@ def main():
 
         try:
             data, addr = sock.recvfrom(512)
-            #print '[%s] | received from %s: %s' % (time.ctime(), addr, data)
-
+            print '[%s] | received from %s: %s' % (time.ctime(), addr, data)
+	    connection_state = True
         except socket.error, e:
             if e.errno == 11:
-                if not is_movie_playing():
-                    start_random_movie_from_list(list(playlist))
+		print 'timeout receiving, cabinet down?'
+		if first_timeout:
+                    empty_list_time = time.time() - EMPTY_LIST_TIMEOUT
+                    first_timeout = False
+		empty_list_time = timeout_timer(empty_list_time)
             else:
                 print 'Expection: %s' % str(e)
-            continue
+	    continue
+
+        if not first_timeout:
+            playlist = set()
+            previous_state = [False] * DRAWERS
+            empty_list_time = time.time()
+            first_timeout = True
 
         try:
             if len(data) != 19:
@@ -181,12 +211,7 @@ def main():
                 elif not is_movie_playing():
                     start_movie(random.choice(list(playlist)))
             else:
-                dt = time.time() - empty_list_time
-                if dt > EMPTY_LIST_TIMEOUT:
-                    if not is_movie_playing():
-                        start_movie(random.randrange(0, DRAWERS))
-                else:
-                    print "clocks ticking: %d" % (dt) 
+		empty_list_time = timeout_timer(empty_list_time)
         except IndexError:
             pass
 
